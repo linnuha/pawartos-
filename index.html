@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Data Penduduk Supabase Fix Final</title>
+<title>Data Penduduk Supabase Fixed Client</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
@@ -57,9 +57,9 @@ img.preview { width:50px; height:50px; object-fit:cover; margin-right:5px; }
 
 <script>
 // ==== Supabase Setup ====
-const SUPABASE_URL = "https://qlhnigssqyrajriufwrp.supabase.co"; // ganti
+const SUPABASE_URL = "hhttps://qlhnigssqyrajriufwrp.supabase.co"; // ganti
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsaG5pZ3NzcXlyYWpyaXVmd3JwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE5Nzk3MTksImV4cCI6MjA2NzU1NTcxOX0.0V-1R0AlEaWsN_ftCIty7Ckbka8RNHuPvwu_wPWKTcA";          // ganti
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ==== Global Role ====
 let role = '';
@@ -68,7 +68,7 @@ let role = '';
 document.getElementById("loginBtn").onclick = async ()=>{
   const username = document.getElementById("username").value;
   const password = document.getElementById("password").value;
-  const { data, error } = await supabase.from('users').select('*').eq('username',username).eq('password',password).single();
+  const { data, error } = await supabaseClient.from('users').select('*').eq('username',username).eq('password',password).single();
   if(error || !data){ alert("Login gagal"); return; }
   role = data.role;
   document.getElementById("loginDiv").style.display="none";
@@ -89,9 +89,9 @@ map.on('click', e=>{
 // ==== Upload Foto ====
 async function uploadFile(file, folder){
   if(!file) return "";
-  const { data, error } = await supabase.storage.from('uploads').upload(`${folder}/${Date.now()}_${file.name}`, file);
+  const { data, error } = await supabaseClient.storage.from('uploads').upload(`${folder}/${Date.now()}_${file.name}`, file);
   if(error) throw error;
-  const { publicUrl } = supabase.storage.from('uploads').getPublicUrl(data.path);
+  const { publicUrl } = supabaseClient.storage.from('uploads').getPublicUrl(data.path);
   return publicUrl;
 }
 
@@ -107,7 +107,7 @@ document.getElementById("submitBtn").onclick = async ()=>{
   const fotoDiri = await uploadFile(document.getElementById("fotoDiri").files[0], "fotoDiri");
   const fotoDepanRumah = await uploadFile(document.getElementById("fotoDepanRumah").files[0], "fotoDepanRumah");
 
-  const { data, error } = await supabase.from('penduduk').insert([{
+  const { data, error } = await supabaseClient.from('penduduk').insert([{
     nik,nama,alamat,nohp,fotoKK,fotoDiri,fotoDepanRumah,lokasi,keterangan
   }]);
   if(error) alert(error.message);
@@ -116,7 +116,7 @@ document.getElementById("submitBtn").onclick = async ()=>{
 
 // ==== Load Data ====
 async function loadData(){
-  const { data, error } = await supabase.from('penduduk').select('*').order('id',{ascending:true});
+  const { data, error } = await supabaseClient.from('penduduk').select('*').order('id',{ascending:true});
   if(error) return alert(error.message);
   const tbody = document.querySelector("#dataTable tbody");
   tbody.innerHTML="";
@@ -135,14 +135,14 @@ async function loadData(){
 // ==== Delete Data ====
 async function deleteData(id){
   if(!confirm("Hapus data ini?")) return;
-  const { error } = await supabase.from('penduduk').delete().eq('id',id);
+  const { error } = await supabaseClient.from('penduduk').delete().eq('id',id);
   if(error) alert(error.message);
   else loadData();
 }
 
 // ==== Export Excel/CSV ====
 document.getElementById("exportBtn").onclick = async ()=>{
-  const { data, error } = await supabase.from('penduduk').select('*');
+  const { data, error } = await supabaseClient.from('penduduk').select('*');
   if(error) return alert(error.message);
   const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new();
