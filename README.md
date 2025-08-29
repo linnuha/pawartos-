@@ -1,1 +1,0 @@
-# pawartos-lelayu
