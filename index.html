@@ -57,10 +57,14 @@ img.preview { width:50px; height:50px; object-fit:cover; margin-right:5px; }
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-// ==== Supabase Setup ====
-const SUPABASE_URL = "https://qlhnigssqyrajriufwrp.supabase.co"; // ganti sesuai project
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsaG5pZ3NzcXlyYWpyaXVmd3JwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE5Nzk3MTksImV4cCI6MjA2NzU1NTcxOX0.0V-1R0AlEaWsN_ftCIty7Ckbka8RNHuPvwu_wPWKTcA";          // ganti sesuai project
-const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const SUPABASE_URL = "https://qlhnigssqyrajriufwrp.supabase.co"; // ganti
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsaG5pZ3NzcXlyYWpyaXVmd3JwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE5Nzk3MTksImV4cCI6MjA2NzU1NTcxOX0.0V-1R0AlEaWsN_ftCIty7Ckbka8RNHuPvwu_wPWKTcA";          // ganti
+  const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  (async()=>{
+    const { data } = await client.from('penduduk').select('*');
+    console.log(data);
+  })();
 
 // ==== Global Role ====
 let role = '';
