@@ -1,107 +1,62 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8" />
-  <title>Dashboard Penduduk</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pendataan Penduduk - Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="container py-4">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h3>Dashboard Penduduk</h3>
-    <div>
-      <button id="btnReload" class="btn btn-outline-secondary btn-sm">Reload</button>
-      <button id="btnExport" class="btn btn-primary btn-sm">Ekspor CSV (Spreadsheet)</button>
-      <button id="btnLogout" class="btn btn-danger btn-sm">Logout</button>
-    </div>
-  </div>
 
-  <table class="table table-striped" id="tbl">
-    <thead><tr id="thead"></tr></thead>
-    <tbody id="tbody"></tbody>
+  <h2 class="mb-3">Dashboard Data Penduduk</h2>
+
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>NIK</th>
+        <th>Nama</th>
+        <th>Alamat</th>
+        <th>Keterangan</th>
+        <th>KK</th>
+        <th>Foto Diri</th>
+        <th>Foto Rumah</th>
+        <th>Lokasi</th>
+      </tr>
+    </thead>
+    <tbody id="data-body"></tbody>
   </table>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    const SUPABASE_URL = "https://qlhnigssqyrajriufwrp.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsaG5pZ3NzcXlyYWpyaXVmd3JwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE5Nzk3MTksImV4cCI6MjA2NzU1NTcxOX0.0V-1R0AlEaWsN_ftCIty7Ckbka8RNHuPvwu_wPWKTcA";
     const GAS_URL = "https://script.google.com/macros/s/AKfycbx8AO7-eZGN-4HsUcs9EogmWwMoUMtB4RoOTVxdCpacNMnnOnZpftK54LvkH7s_ROkP7Q/exec";
-    
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    async function loadFromSheet() {
-      const url = GAS_URL + "?action=get";
-      const res = await fetch(url);
-      const j = await res.json();
-      if (!j.ok) return alert("Gagal ambil data: " + (j.error||""));
-      const data = j.data || [];
-      renderTable(data);
-    }
+    async function loadData() {
+      try {
+        const res = await fetch(GAS_URL + "?action=read");
+        const data = await res.json();
 
-    function renderTable(rows) {
-      const tbody = document.getElementById('tbody');
-      const thead = document.getElementById('thead');
-      tbody.innerHTML = "";
-      thead.innerHTML = "";
+        const tbody = document.getElementById("data-body");
+        tbody.innerHTML = "";
 
-      if (!rows.length) {
-        thead.innerHTML = "<th>NIK</th><th>Nama</th><th>Alamat</th><th>Keterangan</th><th>KK</th><th>Foto Diri</th><th>Foto Rumah</th><th>Lokasi</th><th>Aksi</th>";
-        return;
-      }
-
-      // get headers from object keys (spreadsheet used headers row)
-      const headers = Object.keys(rows[0]);
-      headers.forEach(h => {
-        thead.innerHTML += `<th>${h}</th>`;
-      });
-      thead.innerHTML += `<th>Aksi</th>`;
-
-      rows.forEach((r, idx) => {
-        const tr = document.createElement('tr');
-        const getCell = (k) => (r[k] !== undefined ? r[k] : "");
-        let html = "";
-        headers.forEach(h => {
-          if (h.toLowerCase().includes('kk') || h.toLowerCase().includes('foto')) {
-            const v = getCell(h);
-            if (v && v.startsWith('http')) {
-              if (v.endsWith('.pdf')) html += `<td><a href="${v}" target="_blank">Lihat</a></td>`;
-              else html += `<td><img src="${v}" width="60"/></td>`;
-            } else html += `<td>${v || '-'}</td>`;
-          } else if (h.toLowerCase().includes('lat') || h.toLowerCase().includes('lng')) {
-            html += `<td>${getCell(h) || '-'}</td>`;
-          } else {
-            html += `<td>${getCell(h) || '-'}</td>`;
-          }
+        data.forEach(row => {
+          tbody.innerHTML += `
+            <tr>
+              <td>${row.nik}</td>
+              <td>${row.nama}</td>
+              <td>${row.alamat}</td>
+              <td>${row.keterangan}</td>
+              <td><a href="${row.fotoKK}" target="_blank">Lihat</a></td>
+              <td><a href="${row.fotoDiri}" target="_blank">Lihat</a></td>
+              <td><a href="${row.fotoRumah}" target="_blank">Lihat</a></td>
+              <td><a href="https://www.google.com/maps?q=${row.latitude},${row.longitude}" target="_blank">Map</a></td>
+            </tr>
+          `;
         });
-
-        // action: delete by supabase id (if present in supabase_id column)
-        const supabaseId = r['supabase_id'] || "";
-        html += `<td>${supabaseId ? `<button class="btn btn-sm btn-danger" onclick="hapusSupabase('${supabaseId}')">Hapus</button>` : '-'}</td>`;
-        tr.innerHTML = html;
-        tbody.appendChild(tr);
-      });
+      } catch (err) {
+        console.error("Gagal load data:", err);
+      }
     }
 
-    async function hapusSupabase(id) {
-      if (!confirm("Yakin hapus record di Supabase?")) return;
-      const { error } = await supabase.from('penduduk').delete().eq('id', id);
-      if (error) return alert("Gagal hapus: " + error.message);
-      alert("Terhapus di Supabase. Perbarui sheet manual/otomatis jika perlu.");
-      loadFromSheet();
-    }
-
-    document.getElementById('btnReload').addEventListener('click', loadFromSheet);
-    document.getElementById('btnLogout').addEventListener('click', async () => { await supabase.auth.signOut(); location.href='login.html'; });
-
-    // export: open spreadsheet (user can export via Google Sheets UI)
-    document.getElementById('btnExport').addEventListener('click', () => {
-      // give instructions; easier: open spreadsheet url (you can store it as a constant)
-      const sheetUrl = `https://docs.google.com/spreadsheets/d/PASTE_YOUR_SPREADSHEET_ID_HERE`;
-      window.open(sheetUrl, '_blank');
-    });
-
-    // initial load
-    loadFromSheet();
+    document.addEventListener("DOMContentLoaded", loadData);
   </script>
 </body>
 </html>
