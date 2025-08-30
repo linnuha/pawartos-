@@ -1,164 +1,132 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>Input Data Penduduk</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <style>
-    #map { height: 300px; }
-  </style>
+<meta charset="UTF-8">
+<title>Input Data Penduduk</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/@supabase/supabase-js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<style>#map {height: 300px;}</style>
 </head>
 <body class="bg-light">
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="#">Pendataan</a>
-      <div class="ms-auto">
-        <button id="loginBtn" class="btn btn-light btn-sm">Login</button>
-        <button id="logoutBtn" class="btn btn-danger btn-sm d-none">Logout</button>
-      </div>
-    </div>
-  </nav>
 
-  <div class="container my-4">
-    <h3>Form Input Data Penduduk</h3>
+<div class="container py-4">
+  <div id="loginSection">
+    <h3>Login</h3>
+    <form id="loginForm">
+      <input type="email" id="email" placeholder="Email" class="form-control mb-2" required>
+      <input type="password" id="password" placeholder="Password" class="form-control mb-2" required>
+      <button type="submit" class="btn btn-primary">Login</button>
+    </form>
+  </div>
+
+  <div id="formSection" class="hidden">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h3>Input Data Penduduk</h3>
+      <button id="logoutBtn" class="btn btn-danger btn-sm">Logout</button>
+    </div>
     <form id="pendudukForm" class="row g-3">
-      <div class="col-md-6">
-        <label class="form-label">NIK</label>
-        <input type="text" class="form-control" id="nik" required>
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">Nama</label>
-        <input type="text" class="form-control" id="nama" required>
-      </div>
-      <div class="col-md-12">
-        <label class="form-label">Alamat</label>
-        <input type="text" class="form-control" id="alamat" required>
-      </div>
-      <div class="col-md-12">
-        <label class="form-label">Keterangan</label>
-        <textarea class="form-control" id="keterangan"></textarea>
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Foto KK</label>
-        <input type="file" class="form-control" id="foto_kk" accept="image/*" required>
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Foto Diri</label>
-        <input type="file" class="form-control" id="foto_diri" accept="image/*" required>
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Foto Rumah</label>
-        <input type="file" class="form-control" id="foto_rumah" accept="image/*" required>
-      </div>
+      <div class="col-md-6"><label>NIK</label><input type="text" class="form-control" id="nik" required></div>
+      <div class="col-md-6"><label>Nama</label><input type="text" class="form-control" id="nama" required></div>
+      <div class="col-md-12"><label>Alamat</label><input type="text" class="form-control" id="alamat" required></div>
+      <div class="col-md-12"><label>Keterangan</label><textarea class="form-control" id="keterangan"></textarea></div>
+      <div class="col-md-4"><label>Foto KK</label><input type="file" class="form-control" id="foto_kk" accept="image/*" required></div>
+      <div class="col-md-4"><label>Foto Diri</label><input type="file" class="form-control" id="foto_diri" accept="image/*" required></div>
+      <div class="col-md-4"><label>Foto Rumah</label><input type="file" class="form-control" id="foto_rumah" accept="image/*" required></div>
       <div class="col-12">
-        <label class="form-label">Pilih Lokasi</label>
+        <label>Pilih Lokasi</label>
         <div id="map"></div>
         <input type="hidden" id="latitude">
         <input type="hidden" id="longitude">
       </div>
-      <div class="col-12">
-        <button class="btn btn-success" type="submit">Simpan Data</button>
-      </div>
+      <div class="col-12"><button class="btn btn-success">Simpan Data</button></div>
     </form>
   </div>
+</div>
 
-  <script>
-    const SUPABASE_URL = "https://qlhnigssqyrajriufwrp.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsaG5pZ3NzcXlyYWpyaXVmd3JwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE5Nzk3MTksImV4cCI6MjA2NzU1NTcxOX0.0V-1R0AlEaWsN_ftCIty7Ckbka8RNHuPvwu_wPWKTcA"; // ganti dengan anon key
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+<script>
+const SUPABASE_URL = "https://qlhnigssqyrajriufwrp.supabase.co"; 
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsaG5pZ3NzcXlyYWpyaXVmd3JwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE5Nzk3MTksImV4cCI6MjA2NzU1NTcxOX0.0V-1R0AlEaWsN_ftCIty7Ckbka8RNHuPvwu_wPWKTcA";
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // --- Login / Logout ---
-    const loginBtn = document.getElementById("loginBtn");
-    const logoutBtn = document.getElementById("logoutBtn");
+const loginSection = document.getElementById("loginSection");
+const formSection = document.getElementById("formSection");
+const loginForm = document.getElementById("loginForm");
+const pendudukForm = document.getElementById("pendudukForm");
+const logoutBtn = document.getElementById("logoutBtn");
 
-    loginBtn.addEventListener("click", async () => {
-      const { data, error } = await supabase.auth.signInWithOAuth({ provider: "google" });
-      if (error) alert("Login gagal: " + error.message);
-    });
+let currentUser = null;
 
-    logoutBtn.addEventListener("click", async () => {
-      await supabase.auth.signOut();
-      location.reload();
-    });
+// Login manual via tabel users
+loginForm.addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  const { data, error } = await supabase.from("users").select("*")
+    .eq("email", email).eq("password", password).single();
+  if(error || !data){alert("Email atau password salah!"); return;}
+  currentUser = data;
+  sessionStorage.setItem("user", JSON.stringify(currentUser));
+  loginSection.classList.add("hidden");
+  formSection.classList.remove("hidden");
+});
 
-    supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        loginBtn.classList.add("d-none");
-        logoutBtn.classList.remove("d-none");
-      } else {
-        loginBtn.classList.remove("d-none");
-        logoutBtn.classList.add("d-none");
-      }
-    });
+// Logout
+logoutBtn.addEventListener("click", ()=>{
+  sessionStorage.removeItem("user");
+  location.reload();
+});
 
-    // --- Map Leaflet ---
-    let latInput = document.getElementById("latitude");
-    let lngInput = document.getElementById("longitude");
-    const map = L.map('map').setView([-7.8014, 110.3644], 13); // default Jogja
+// Map
+const map = L.map("map").setView([-7.8014,110.3644],13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OSM'}).addTo(map);
+let marker;
+map.on("click",(e)=>{
+  if(marker) map.removeLayer(marker);
+  marker = L.marker(e.latlng).addTo(map);
+  document.getElementById("latitude").value = e.latlng.lat;
+  document.getElementById("longitude").value = e.latlng.lng;
+});
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap'
-    }).addTo(map);
+// Upload file ke Supabase Storage
+async function uploadFile(file, folder, nik){
+  const path = `${nik}/${folder}-${Date.now()}-${file.name}`;
+  const { error } = await supabase.storage.from("penduduk").upload(path, file, { upsert:true });
+  if(error){console.error(error); alert("Gagal upload "+folder); return null;}
+  const { data } = supabase.storage.from("penduduk").getPublicUrl(path);
+  return data.publicUrl;
+}
 
-    let marker;
-    map.on("click", (e) => {
-      const { lat, lng } = e.latlng;
-      if (marker) map.removeLayer(marker);
-      marker = L.marker([lat, lng]).addTo(map);
-      latInput.value = lat;
-      lngInput.value = lng;
-    });
+// Submit penduduk
+pendudukForm.addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  if(!currentUser || currentUser.role!=="admin"){alert("Hanya admin bisa input data"); return;}
+  try{
+    const nik = document.getElementById("nik").value;
+    const nama = document.getElementById("nama").value;
+    const alamat = document.getElementById("alamat").value;
+    const keterangan = document.getElementById("keterangan").value;
+    const latitude = document.getElementById("latitude").value;
+    const longitude = document.getElementById("longitude").value;
 
-    // --- Upload + Simpan ---
-    async function uploadFile(file, path) {
-      const { data, error } = await supabase.storage
-        .from("penduduk")
-        .upload(path, file, { upsert: true });
-      if (error) throw error;
-      return `${SUPABASE_URL}/storage/v1/object/public/penduduk/${path}`;
-    }
+    const fotoKK = await uploadFile(document.getElementById("foto_kk").files[0],"kk",nik);
+    const fotoDiri = await uploadFile(document.getElementById("foto_diri").files[0],"diri",nik);
+    const fotoRumah = await uploadFile(document.getElementById("foto_rumah").files[0],"rumah",nik);
 
-    document.getElementById("pendudukForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
+    if(!fotoKK||!fotoDiri||!fotoRumah) return;
 
-      try {
-        const nik = document.getElementById("nik").value.trim();
-        const nama = document.getElementById("nama").value.trim();
-        const alamat = document.getElementById("alamat").value.trim();
-        const keterangan = document.getElementById("keterangan").value.trim();
-        const lat = latInput.value;
-        const lng = lngInput.value;
-
-        const fotoKKFile = document.getElementById("foto_kk").files[0];
-        const fotoDiriFile = document.getElementById("foto_diri").files[0];
-        const fotoRumahFile = document.getElementById("foto_rumah").files[0];
-
-        const timestamp = Date.now();
-        const fotoKKUrl = await uploadFile(fotoKKFile, `${nik}/kk-${timestamp}.jpg`);
-        const fotoDiriUrl = await uploadFile(fotoDiriFile, `${nik}/diri-${timestamp}.jpg`);
-        const fotoRumahUrl = await uploadFile(fotoRumahFile, `${nik}/rumah-${timestamp}.jpg`);
-
-        const { error } = await supabase.from("penduduk").insert([{
-          nik, nama, alamat, keterangan,
-          foto_kk: fotoKKUrl,
-          foto_diri: fotoDiriUrl,
-          foto_rumah: fotoRumahUrl,
-          latitude: lat,
-          longitude: lng
-        }]);
-
-        if (error) throw error;
-        alert("Data berhasil disimpan!");
-        e.target.reset();
-      } catch (err) {
-        console.error(err);
-        alert("Gagal simpan data: " + err.message);
-      }
-    });
-  </script>
+    const { error } = await supabase.from("penduduk").insert([{
+      nik,nama,alamat,keterangan,latitude,longitude,
+      foto_kk:fotoKK,foto_diri:fotoDiri,foto_rumah:fotoRumah
+    }]);
+    if(error) throw error;
+    alert("Data berhasil disimpan!");
+    pendudukForm.reset();
+    if(marker) map.removeLayer(marker);
+  }catch(err){console.error(err); alert("Gagal simpan data");}
+});
+</script>
 </body>
 </html>

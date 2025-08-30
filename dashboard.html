@@ -1,141 +1,83 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>Dashboard Penduduk</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<meta charset="UTF-8">
+<title>Dashboard Penduduk</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js"></script>
 </head>
-<body class="container py-4">
-  <h2>Dashboard Penduduk</h2>
+<body class="bg-light">
 
-  <table class="table table-bordered" id="pendudukTable">
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>Dashboard Penduduk</h3>
+    <button id="logoutBtn" class="btn btn-danger btn-sm">Logout</button>
+  </div>
+  <table class="table table-bordered table-striped" id="pendudukTable">
     <thead>
       <tr>
-        <th>No</th>
-        <th>NIK</th>
-        <th>Nama</th>
-        <th>Foto KK</th>
-        <th>Foto Diri</th>
-        <th>Foto Rumah</th>
-        <th>Lat</th>
-        <th>Lng</th>
-        <th>Aksi</th>
+        <th>#</th><th>NIK</th><th>Nama</th><th>Alamat</th><th>Keterangan</th>
+        <th>Foto KK</th><th>Foto Diri</th><th>Foto Rumah</th>
+        <th>Lat</th><th>Lng</th><th>Aksi</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
+</div>
 
-  <!-- Modal Edit -->
-  <div class="modal fade" id="editModal" tabindex="-1">
-    <div class="modal-dialog">
-      <form class="modal-content" id="editForm">
-        <div class="modal-header">
-          <h5 class="modal-title">Edit Penduduk</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <input type="hidden" name="id">
-          <div class="mb-3">
-            <label class="form-label">NIK</label>
-            <input type="text" class="form-control" name="nik" readonly>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Nama</label>
-            <input type="text" class="form-control" name="nama" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Latitude</label>
-            <input type="text" class="form-control" name="latitude">
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Longitude</label>
-            <input type="text" class="form-control" name="longitude">
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-        </div>
-      </form>
-    </div>
-  </div>
+<script>
+const SUPABASE_URL = "https://qlhnigssqyrajriufwrp.supabase.co"; 
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsaG5pZ3NzcXlyYWpyaXVmd3JwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE5Nzk3MTksImV4cCI6MjA2NzU1NTcxOX0.0V-1R0AlEaWsN_ftCIty7Ckbka8RNHuPvwu_wPWKTcA";
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    const SUPABASE_URL = "https://qlhnigssqyrajriufwrp.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsaG5pZ3NzcXlyYWpyaXVmd3JwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE5Nzk3MTksImV4cCI6MjA2NzU1NTcxOX0.0V-1R0AlEaWsN_ftCIty7Ckbka8RNHuPvwu_wPWKTcA"; 
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const logoutBtn = document.getElementById("logoutBtn");
+let user = JSON.parse(sessionStorage.getItem("user"));
+if(!user){alert("Harus login!"); window.location.href="index.html";}
 
-    const tableBody = document.querySelector("#pendudukTable tbody");
-    let editModal = new bootstrap.Modal(document.getElementById('editModal'));
+logoutBtn.addEventListener("click", ()=>{
+  sessionStorage.removeItem("user");
+  window.location.href="index.html";
+});
 
-    async function loadData() {
-      const { data, error } = await supabase.from("penduduk").select("*").order("created_at", { ascending: false });
-      if (error) {
-        console.error(error);
-        return;
-      }
-      tableBody.innerHTML = "";
-      data.forEach((row, i) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${i+1}</td>
-          <td>${row.nik}</td>
-          <td>${row.nama}</td>
-          <td><img src="${row.foto_kk}" width="60"></td>
-          <td><img src="${row.foto_diri}" width="60"></td>
-          <td><img src="${row.foto_rumah}" width="60"></td>
-          <td>${row.latitude || "-"}</td>
-          <td>${row.longitude || "-"}</td>
-          <td>
-            <button class="btn btn-sm btn-warning me-1" onclick="openEdit(${row.id}, '${row.nik}', '${row.nama}', '${row.latitude}', '${row.longitude}')">Edit</button>
-            <button class="btn btn-sm btn-danger" onclick="deleteData(${row.id})">Delete</button>
-          </td>
-        `;
-        tableBody.appendChild(tr);
-      });
-    }
+async function loadData(){
+  const { data, error } = await supabase.from("penduduk").select("*").order("id",{ascending:true});
+  if(error){console.error(error); return;}
+  const tbody = document.querySelector("#pendudukTable tbody");
+  tbody.innerHTML="";
+  data.forEach((item,i)=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${i+1}</td>
+      <td>${item.nik}</td>
+      <td>${item.nama}</td>
+      <td>${item.alamat}</td>
+      <td>${item.keterangan}</td>
+      <td><img src="${item.foto_kk}" width="50"></td>
+      <td><img src="${item.foto_diri}" width="50"></td>
+      <td><img src="${item.foto_rumah}" width="50"></td>
+      <td>${item.latitude}</td>
+      <td>${item.longitude}</td>
+      <td>
+        ${user.role==="admin"?`<button class="btn btn-sm btn-warning" onclick="editData(${item.id})">Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteData(${item.id})">Delete</button>`:"-"}
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
 
-    async function deleteData(id) {
-      if (!confirm("Yakin hapus data ini?")) return;
-      const { error } = await supabase.from("penduduk").delete().eq("id", id);
-      if (error) {
-        alert("Gagal hapus: " + error.message);
-      } else {
-        alert("Data terhapus");
-        loadData();
-      }
-    }
+async function deleteData(id){
+  if(!confirm("Hapus data ini?")) return;
+  const { error } = await supabase.from("penduduk").delete().eq("id",id);
+  if(error){alert("Gagal hapus"); return;}
+  loadData();
+}
 
-    function openEdit(id, nik, nama, lat, lng) {
-      const form = document.getElementById("editForm");
-      form.id.value = id;
-      form.nik.value = nik;
-      form.nama.value = nama;
-      form.latitude.value = lat;
-      form.longitude.value = lng;
-      editModal.show();
-    }
+function editData(id){ alert("Edit fitur bisa ditambahkan sesuai kebutuhan"); }
 
-    document.getElementById("editForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const form = e.target;
-      const id = form.id.value;
-      const nama = form.nama.value;
-      const latitude = form.latitude.value;
-      const longitude = form.longitude.value;
-      const { error } = await supabase.from("penduduk").update({ nama, latitude, longitude }).eq("id", id);
-      if (error) {
-        alert("Gagal update: " + error.message);
-      } else {
-        alert("Data berhasil diperbarui");
-        editModal.hide();
-        loadData();
-      }
-    });
-
-    loadData();
-  </script>
+loadData();
+</script>
 </body>
 </html>
