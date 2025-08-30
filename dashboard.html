@@ -4,59 +4,72 @@
   <meta charset="UTF-8">
   <title>Dashboard Penduduk</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>#map { height: 400px; }</style>
 </head>
-<body class="bg-light">
-  <div class="container py-4">
-    <h3 class="mb-3">Dashboard Data Penduduk</h3>
-    <table class="table table-bordered table-striped" id="dataTable">
-      <thead class="table-dark">
-        <tr>
-          <th>NIK</th><th>Nama</th><th>Alamat</th><th>Keterangan</th>
-          <th>KK</th><th>Foto Diri</th><th>Foto Rumah</th>
-          <th>Lokasi</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+<body class="container py-5">
+  <h2>Dashboard Data Penduduk</h2>
+  <button class="btn btn-success mb-3" onclick="exportXLSX()">Export ke Excel</button>
 
-    <h5>Peta Lokasi</h5>
-    <div id="mapDashboard" style="height:400px;"></div>
-  </div>
+  <table class="table table-bordered" id="dataTable">
+    <thead>
+      <tr>
+        <th>NIK</th><th>Nama</th><th>Alamat</th><th>Keterangan</th>
+        <th>Foto KK</th><th>Foto Diri</th><th>Foto Rumah</th><th>Lokasi</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
-  <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbw-Yssu1IlHunLtRXD4LbCKXvxyMJQF3DWyBFvg9wr1uyqKHWXYqEfqDTPX6ZwTr0kalw/exec";
+  <h3>Peta Lokasi</h3>
+  <div id="map"></div>
 
-    async function loadData() {
-      const res = await fetch(GAS_URL);
-      const data = await res.json();
-      const tbody = document.querySelector("#dataTable tbody");
-      tbody.innerHTML = "";
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
-      data.forEach(d => {
-        tbody.innerHTML += `
-          <tr>
-            <td>${d.nik}</td>
-            <td>${d.nama}</td>
-            <td>${d.alamat}</td>
-            <td>${d.keterangan}</td>
-            <td><a href="${d.kkUrl}" target="_blank">Lihat</a></td>
-            <td><a href="${d.diriUrl}" target="_blank">Lihat</a></td>
-            <td><a href="${d.rumahUrl}" target="_blank">Lihat</a></td>
-            <td>${d.lat}, ${d.lng}</td>
-          </tr>`;
-        if(d.lat && d.lng){
-          L.marker([d.lat, d.lng]).addTo(map).bindPopup(`${d.nama} (${d.nik})`);
-        }
-      });
+<script>
+const SUPABASE_URL = "https://qlhnigssqyrajriufwrp.supabase.co"; 
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsaG5pZ3NzcXlyYWpyaXVmd3JwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTk3OTcxOSwiZXhwIjoyMDY3NTU1NzE5fQ.orLku6OpgoOWshiZ9SweZdNTTbiRgnf1katQnCdBCKw"; 
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let map = L.map('map').setView([-7.8, 110.3], 10);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'©OSM' }).addTo(map);
+
+async function loadData(){
+  const {data, error} = await supabase.from("penduduk").select("*");
+  if(error){ console.error(error); return; }
+  let tbody = document.querySelector("#dataTable tbody");
+  tbody.innerHTML = "";
+  data.forEach(row=>{
+    tbody.innerHTML += `
+      <tr>
+        <td>${row.nik}</td>
+        <td>${row.nama}</td>
+        <td>${row.alamat}</td>
+        <td>${row.keterangan||""}</td>
+        <td>${row.foto_kk? `<a href="${row.foto_kk}" target="_blank">Lihat</a>`:""}</td>
+        <td>${row.foto_diri? `<a href="${row.foto_diri}" target="_blank">Lihat</a>`:""}</td>
+        <td>${row.foto_rumah? `<a href="${row.foto_rumah}" target="_blank">Lihat</a>`:""}</td>
+        <td>${row.lokasi||""}</td>
+      </tr>`;
+    if(row.lokasi){
+      let [lat,lng] = row.lokasi.split(",").map(Number);
+      if(!isNaN(lat)&&!isNaN(lng)) L.marker([lat,lng]).addTo(map).bindPopup(row.nama);
     }
+  });
+}
 
-    // Map init
-    let map = L.map('mapDashboard').setView([-7.797068, 110.370529], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+// EXPORT EXCEL
+function exportXLSX(){
+  let wb = XLSX.utils.book_new();
+  let table = document.getElementById("dataTable");
+  let ws = XLSX.utils.table_to_sheet(table);
+  XLSX.utils.book_append_sheet(wb, ws, "Penduduk");
+  XLSX.writeFile(wb, "data_penduduk.xlsx");
+}
 
-    loadData();
-  </script>
+loadData();
+</script>
 </body>
 </html>
