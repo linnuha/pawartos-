@@ -4,175 +4,59 @@
   <meta charset="UTF-8">
   <title>Dashboard Penduduk</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <style>
-    body { background:#f9f9f9; }
-    .container { margin-top: 30px; }
-    iframe { border:0; width:100%; height:300px; }
-    table img { max-width:80px; border-radius:8px; }
-  </style>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 </head>
-<body>
-<div class="container">
-  <h2 class="mb-4">Pendataan Penduduk</h2>
+<body class="bg-light">
+  <div class="container py-4">
+    <h3 class="mb-3">Dashboard Data Penduduk</h3>
+    <table class="table table-bordered table-striped" id="dataTable">
+      <thead class="table-dark">
+        <tr>
+          <th>NIK</th><th>Nama</th><th>Alamat</th><th>Keterangan</th>
+          <th>KK</th><th>Foto Diri</th><th>Foto Rumah</th>
+          <th>Lokasi</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
 
-  <!-- Form Input Penduduk -->
-  <form id="pendudukForm" class="row g-3">
-    <div class="col-md-6">
-      <label class="form-label">NIK</label>
-      <input type="text" id="nik" class="form-control" required>
-    </div>
-    <div class="col-md-6">
-      <label class="form-label">Nama</label>
-      <input type="text" id="nama" class="form-control" required>
-    </div>
-    <div class="col-12">
-      <label class="form-label">Alamat</label>
-      <input type="text" id="alamat" class="form-control" required>
-    </div>
-    <div class="col-12">
-      <label class="form-label">Keterangan</label>
-      <textarea id="keterangan" class="form-control"></textarea>
-    </div>
+    <h5>Peta Lokasi</h5>
+    <div id="mapDashboard" style="height:400px;"></div>
+  </div>
 
-    <!-- Uploads -->
-    <div class="col-md-4">
-      <label class="form-label">Upload KK</label>
-      <input type="file" id="kk" class="form-control" accept="image/*">
-    </div>
-    <div class="col-md-4">
-      <label class="form-label">Foto Diri</label>
-      <input type="file" id="foto_diri" class="form-control" accept="image/*">
-    </div>
-    <div class="col-md-4">
-      <label class="form-label">Foto Rumah</label>
-      <input type="file" id="foto_rumah" class="form-control" accept="image/*">
-    </div>
+  <script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbw-Yssu1IlHunLtRXD4LbCKXvxyMJQF3DWyBFvg9wr1uyqKHWXYqEfqDTPX6ZwTr0kalw/exec";
 
-    <!-- Map -->
-    <div class="col-12">
-      <label class="form-label">Tag Lokasi (Google Maps Embed URL)</label>
-      <input type="text" id="lokasi" class="form-control" placeholder="https://www.google.com/maps/embed?...">
-      <iframe id="mapPreview"></iframe>
-    </div>
+    async function loadData() {
+      const res = await fetch(GAS_URL);
+      const data = await res.json();
+      const tbody = document.querySelector("#dataTable tbody");
+      tbody.innerHTML = "";
 
-    <div class="col-12">
-      <button type="submit" class="btn btn-primary">Simpan Data</button>
-    </div>
-  </form>
-
-  <hr>
-
-  <!-- Tabel Data -->
-  <h3>Data Penduduk</h3>
-  <table class="table table-striped" id="dataTable">
-    <thead>
-      <tr>
-        <th>NIK</th>
-        <th>Nama</th>
-        <th>Alamat</th>
-        <th>Keterangan</th>
-        <th>KK</th>
-        <th>Foto Diri</th>
-        <th>Rumah</th>
-        <th>Lokasi</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
-
-<script>
-  // Konfigurasi Supabase
-  const SUPABASE_URL = "https://qlhnigssqyrajriufwrp.supabase.co";
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsaG5pZ3NzcXlyYWpyaXVmd3JwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE5Nzk3MTksImV4cCI6MjA2NzU1NTcxOX0.0V-1R0AlEaWsN_ftCIty7Ckbka8RNHuPvwu_wPWKTcA";
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-  const form = document.getElementById("pendudukForm");
-  const mapInput = document.getElementById("lokasi");
-  const mapPreview = document.getElementById("mapPreview");
-
-  // Preview peta otomatis
-  mapInput.addEventListener("input", () => {
-    mapPreview.src = mapInput.value;
-  });
-
-  // Upload file ke Supabase Storage
-  async function uploadFile(bucket, path, file) {
-    if (!file) return null;
-    const { data, error } = await supabase.storage.from(bucket).upload(path, file, {
-      cacheControl: '3600',
-      upsert: true
-    });
-    if (error) {
-      console.error("Upload error:", error);
-      return null;
+      data.forEach(d => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${d.nik}</td>
+            <td>${d.nama}</td>
+            <td>${d.alamat}</td>
+            <td>${d.keterangan}</td>
+            <td><a href="${d.kkUrl}" target="_blank">Lihat</a></td>
+            <td><a href="${d.diriUrl}" target="_blank">Lihat</a></td>
+            <td><a href="${d.rumahUrl}" target="_blank">Lihat</a></td>
+            <td>${d.lat}, ${d.lng}</td>
+          </tr>`;
+        if(d.lat && d.lng){
+          L.marker([d.lat, d.lng]).addTo(map).bindPopup(`${d.nama} (${d.nik})`);
+        }
+      });
     }
-    return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${data.path}`;
-  }
 
-  // Submit form
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
+    // Map init
+    let map = L.map('mapDashboard').setView([-7.797068, 110.370529], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-    const nik = document.getElementById("nik").value.trim();
-    const nama = document.getElementById("nama").value.trim();
-    const alamat = document.getElementById("alamat").value.trim();
-    const keterangan = document.getElementById("keterangan").value.trim();
-    const lokasi = document.getElementById("lokasi").value.trim();
-
-    // Upload files
-    const kkFile = document.getElementById("kk").files[0];
-    const fotoDiriFile = document.getElementById("foto_diri").files[0];
-    const fotoRumahFile = document.getElementById("foto_rumah").files[0];
-
-    const kkUrl = await uploadFile("penduduk", `${nik}/kk-${Date.now()}-${kkFile?.name}`, kkFile);
-    const fotoDiriUrl = await uploadFile("penduduk", `${nik}/diri-${Date.now()}-${fotoDiriFile?.name}`, fotoDiriFile);
-    const fotoRumahUrl = await uploadFile("penduduk", `${nik}/rumah-${Date.now()}-${fotoRumahFile?.name}`, fotoRumahFile);
-
-    // Simpan ke tabel supabase
-    const { error } = await supabase.from("penduduk").insert([{
-      nik, nama, alamat, keterangan,
-      kk_url: kkUrl, foto_diri_url: fotoDiriUrl, foto_rumah_url: fotoRumahUrl,
-      lokasi
-    }]);
-
-    if (error) {
-      alert("Gagal simpan data: " + error.message);
-    } else {
-      alert("Data berhasil disimpan!");
-      loadData();
-      form.reset();
-      mapPreview.src = "";
-    }
-  });
-
-  // Load tabel
-  async function loadData() {
-    const { data, error } = await supabase.from("penduduk").select("*").order("created_at", { ascending: false });
-    if (error) {
-      console.error(error);
-      return;
-    }
-    const tbody = document.querySelector("#dataTable tbody");
-    tbody.innerHTML = "";
-    data.forEach(row => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${row.nik}</td>
-        <td>${row.nama}</td>
-        <td>${row.alamat}</td>
-        <td>${row.keterangan || ""}</td>
-        <td>${row.kk_url ? `<a href="${row.kk_url}" target="_blank"><img src="${row.kk_url}"></a>` : "-"}</td>
-        <td>${row.foto_diri_url ? `<a href="${row.foto_diri_url}" target="_blank"><img src="${row.foto_diri_url}"></a>` : "-"}</td>
-        <td>${row.foto_rumah_url ? `<a href="${row.foto_rumah_url}" target="_blank"><img src="${row.foto_rumah_url}"></a>` : "-"}</td>
-        <td>${row.lokasi ? `<iframe src="${row.lokasi}" width="200" height="150"></iframe>` : "-"}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
-
-  loadData();
-</script>
+    loadData();
+  </script>
 </body>
 </html>
