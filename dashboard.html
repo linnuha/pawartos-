@@ -7,14 +7,10 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://unpkg.com/@supabase/supabase-js"></script>
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<style>#map {height: 150px;} .img-thumb{width:50px;}</style>
+<style>
+#editMap{height:300px;}
+.img-thumb{width:50px; height:auto;}
+</style>
 </head>
 <body class="bg-light">
 
@@ -26,13 +22,14 @@
       <button id="logoutBtn" class="btn btn-danger btn-sm">Logout</button>
     </div>
   </div>
-  
+
   <table class="table table-bordered table-striped" id="pendudukTable">
     <thead>
       <tr>
         <th>#</th>
         <th>NIK</th>
         <th>Nama</th>
+        <th>No HP</th>
         <th>Alamat</th>
         <th>Keterangan</th>
         <th>Foto KK</th>
@@ -47,174 +44,149 @@
   </table>
 </div>
 
-<!-- Modal Edit -->
+<!-- Edit Modal -->
 <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">Edit Penduduk</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body">
-        <form id="editForm" class="row g-3">
-          <input type="hidden" id="edit_id">
-          <div class="col-md-6"><label>NIK</label><input type="text" id="edit_nik" class="form-control" required></div>
-          <div class="col-md-6"><label>Nama</label><input type="text" id="edit_nama" class="form-control" required></div>
-          <div class="col-12"><label>Alamat</label><input type="text" id="edit_alamat" class="form-control" required></div>
-          <div class="col-12"><label>Keterangan</label><textarea id="edit_keterangan" class="form-control"></textarea></div>
-          <div class="col-md-4"><label>Foto KK</label><input type="file" id="edit_foto_kk" class="form-control" accept="image/*"></div>
-          <div class="col-md-4"><label>Foto Diri</label><input type="file" id="edit_foto_diri" class="form-control" accept="image/*"></div>
-          <div class="col-md-4"><label>Foto Rumah</label><input type="file" id="edit_foto_rumah" class="form-control" accept="image/*"></div>
-          <div class="col-12">
-            <label>Pilih Lokasi</label>
-            <div id="editMap" style="height:300px;"></div>
-            <input type="hidden" id="edit_latitude">
-            <input type="hidden" id="edit_longitude">
-          </div>
-          <div class="col-12"><button class="btn btn-primary">Simpan Perubahan</button></div>
-        </form>
-      </div>
+  <div class="modal-dialog modal-lg"><div class="modal-content">
+    <div class="modal-header">
+      <h5 class="modal-title">Edit Penduduk</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
     </div>
-  </div>
+    <div class="modal-body">
+      <form id="editForm" class="row g-3">
+        <input type="hidden" id="edit_id">
+        <div class="col-md-6"><label>NIK</label><input type="text" id="edit_nik" class="form-control" required></div>
+        <div class="col-md-6"><label>Nama</label><input type="text" id="edit_nama" class="form-control" required></div>
+        <div class="col-md-6"><label>Nomor HP</label><input type="text" id="edit_no_hp" class="form-control" required></div>
+        <div class="col-md-6"><label>Alamat</label><input type="text" id="edit_alamat" class="form-control" required></div>
+        <div class="col-12"><label>Keterangan</label><textarea id="edit_keterangan" class="form-control"></textarea></div>
+        <div class="col-md-4"><label>Foto KK</label><input type="file" id="edit_foto_kk" class="form-control" accept="image/*"></div>
+        <div class="col-md-4"><label>Foto Diri</label><input type="file" id="edit_foto_diri" class="form-control" accept="image/*"></div>
+        <div class="col-md-4"><label>Foto Rumah</label><input type="file" id="edit_foto_rumah" class="form-control" accept="image/*"></div>
+        <div class="col-12">
+          <label>Pilih Lokasi</label>
+          <div id="editMap"></div>
+          <input type="hidden" id="edit_latitude">
+          <input type="hidden" id="edit_longitude">
+        </div>
+        <div class="col-12"><button class="btn btn-primary">Simpan Perubahan</button></div>
+      </form>
+    </div>
+  </div></div>
 </div>
 
+<script src="https://unpkg.com/@supabase/supabase-js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
 <script>
-const SUPABASE_URL = "https://qlhnigssqyrajriufwrp.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsaG5pZ3NzcXlyYWpyaXVmd3JwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE5Nzk3MTksImV4cCI6MjA2NzU1NTcxOX0.0V-1R0AlEaWsN_ftCIty7Ckbka8RNHuPvwu_wPWKTcA";
-const supabase = supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+document.addEventListener("DOMContentLoaded", async ()=>{
+  const SUPABASE_URL = "https://qlhnigssqyrajriufwrp.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsaG5pZ3NzcXlyYWpyaXVmd3JwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE5Nzk3MTksImV4cCI6MjA2NzU1NTcxOX0.0V-1R0AlEaWsN_ftCIty7Ckbka8RNHuPvwu_wPWKTcA";
+  const supabase = supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-let user = JSON.parse(sessionStorage.getItem("user"));
-if(!user){ alert("Harus login!"); window.location.href="index.html"; }
+  const logoutBtn = document.getElementById("logoutBtn");
+  const exportBtn = document.getElementById("exportBtn");
+  let currentUser = JSON.parse(sessionStorage.getItem("user"));
+  if(!currentUser){alert("Login dulu"); location.href="index.html";}
 
-const logoutBtn = document.getElementById("logoutBtn");
-logoutBtn.addEventListener("click",()=>{ sessionStorage.removeItem("user"); window.location.href="index.html"; });
+  logoutBtn.addEventListener("click",()=>{sessionStorage.removeItem("user"); location.href="index.html";});
 
-let dataTable;
-let editMap, editMarker;
+  const table = $("#pendudukTable").DataTable({columns:[
+    {data:"index"}, {data:"nik"}, {data:"nama"}, {data:"no_hp"}, {data:"alamat"}, {data:"keterangan"},
+    {data:"foto_kk"}, {data:"foto_diri"}, {data:"foto_rumah"}, {data:"latitude"}, {data:"longitude"}, {data:"aksi"}
+  ]});
 
-async function loadData(){
-  const { data, error } = await supabase.from("penduduk").select("*").order("id",{ascending:true});
-  if(error){ console.error(error); return; }
-  const tbody = document.querySelector("#pendudukTable tbody");
-  tbody.innerHTML = "";
-  data.forEach((item,i)=>{
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${i+1}</td>
-      <td>${item.nik}</td>
-      <td>${item.nama}</td>
-      <td>${item.alamat}</td>
-      <td>${item.keterangan}</td>
-      <td><img src="${item.foto_kk}" class="img-thumb"></td>
-      <td><img src="${item.foto_diri}" class="img-thumb"></td>
-      <td><img src="${item.foto_rumah}" class="img-thumb"></td>
-      <td>${item.latitude}</td>
-      <td>${item.longitude}</td>
-      <td>${user.role==="admin"?`
-        <button class="btn btn-warning btn-sm" onclick="openEditModal(${item.id})">Edit</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteData(${item.id})">Delete</button>`:"-"}
-      </td>`;
-    tbody.appendChild(tr);
-  });
-
-  if($.fn.DataTable.isDataTable('#pendudukTable')){
-    dataTable.destroy();
-  }
-  dataTable = $('#pendudukTable').DataTable();
-}
-
-// --- Delete ---
-async function deleteData(id){
-  if(!confirm("Hapus data ini?")) return;
-  const { error } = await supabase.from("penduduk").delete().eq("id",id);
-  if(error){ alert("Gagal hapus"); return;}
-  loadData();
-}
-
-// --- Upload file helper ---
-async function uploadFile(file, folder, nik){
-  if(!file) return null;
-  const path = `${nik}/${folder}-${Date.now()}-${file.name}`;
-  const { error } = await supabase.storage.from("penduduk").upload(path, file, { upsert:true });
-  if(error){ console.error(error); alert("Gagal upload "+folder); return null;}
-  const { data } = supabase.storage.from("penduduk").getPublicUrl(path);
-  return data.publicUrl;
-}
-
-// --- Open Edit Modal ---
-async function openEditModal(id){
-  const { data, error } = await supabase.from("penduduk").select("*").eq("id",id).single();
-  if(error){ alert("Gagal ambil data"); return;}
-  document.getElementById("edit_id").value = data.id;
-  document.getElementById("edit_nik").value = data.nik;
-  document.getElementById("edit_nama").value = data.nama;
-  document.getElementById("edit_alamat").value = data.alamat;
-  document.getElementById("edit_keterangan").value = data.keterangan;
-  document.getElementById("edit_latitude").value = data.latitude;
-  document.getElementById("edit_longitude").value = data.longitude;
-
-  // Map
-  setTimeout(()=>{
-    if(editMap) editMap.remove();
-    editMap = L.map("editMap").setView([data.latitude||-7.8014, data.longitude||110.3644],13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OSM'}).addTo(editMap);
-    if(editMarker) editMap.removeLayer(editMarker);
-    editMarker = L.marker([data.latitude||-7.8014, data.longitude||110.3644]).addTo(editMap);
-    editMap.on("click",(e)=>{
-      if(editMarker) editMap.removeLayer(editMarker);
-      editMarker = L.marker(e.latlng).addTo(editMap);
-      document.getElementById("edit_latitude").value = e.latlng.lat;
-      document.getElementById("edit_longitude").value = e.latlng.lng;
+  async function loadData(){
+    const { data,error } = await supabase.from("penduduk").select("*").order("created_at",{ascending:false});
+    if(error){console.error(error); return;}
+    table.clear();
+    data.forEach((item,i)=>{
+      table.row.add({
+        index:i+1,
+        nik:item.nik,
+        nama:item.nama,
+        no_hp:item.no_hp||"",
+        alamat:item.alamat||"",
+        keterangan:item.keterangan||"",
+        foto_kk:item.foto_kk?`<img src="${item.foto_kk}" class="img-thumb">`:"",
+        foto_diri:item.foto_diri?`<img src="${item.foto_diri}" class="img-thumb">`:"",
+        foto_rumah:item.foto_rumah?`<img src="${item.foto_rumah}" class="img-thumb">`:"",
+        latitude:item.latitude||"",
+        longitude:item.longitude||"",
+        aksi:currentUser.role==="admin"?`<button class="btn btn-sm btn-primary editBtn" data-id="${item.id}">Edit</button>
+        <button class="btn btn-sm btn-danger delBtn" data-id="${item.id}">Hapus</button>`:"-"
+      }).draw(false);
     });
-  },100);
+  }
 
-  new bootstrap.Modal(document.getElementById("editModal")).show();
-}
+  await loadData();
 
-// --- Submit Edit ---
-document.getElementById("editForm").addEventListener("submit",async e=>{
-  e.preventDefault();
-  const id = document.getElementById("edit_id").value;
-  const nik = document.getElementById("edit_nik").value;
-  const nama = document.getElementById("edit_nama").value;
-  const alamat = document.getElementById("edit_alamat").value;
-  const keterangan = document.getElementById("edit_keterangan").value;
-  const lat = document.getElementById("edit_latitude").value;
-  const lng = document.getElementById("edit_longitude").value;
-
-  const fotoKK = await uploadFile(document.getElementById("edit_foto_kk").files[0],"kk",nik);
-  const fotoDiri = await uploadFile(document.getElementById("edit_foto_diri").files[0],"diri",nik);
-  const fotoRumah = await uploadFile(document.getElementById("edit_foto_rumah").files[0],"rumah",nik);
-
-  const updateObj = { nik,nama,alamat,keterangan,latitude:lat,longitude:lng };
-  if(fotoKK) updateObj.foto_kk = fotoKK;
-  if(fotoDiri) updateObj.foto_diri = fotoDiri;
-  if(fotoRumah) updateObj.foto_rumah = fotoRumah;
-
-  const { error } = await supabase.from("penduduk").update(updateObj).eq("id",id);
-  if(error){ alert("Gagal update"); return;}
-  alert("Data berhasil diperbarui!");
-  loadData();
-  bootstrap.Modal.getInstance(document.getElementById("editModal")).hide();
-});
-
-// --- Export XLSX ---
-document.getElementById("exportBtn").addEventListener("click",()=>{
-  const wb = XLSX.utils.book_new();
-  const ws_data = [];
-  const headers = ["#", "NIK", "Nama", "Alamat", "Keterangan", "Foto KK", "Foto Diri", "Foto Rumah", "Latitude", "Longitude"];
-  ws_data.push(headers);
-  dataTable.rows().every(function(rowIdx){
-    const d = this.data();
-    ws_data.push(d.slice(0,10).map(td => {
-      if(td.includes('<img')) return td.match(/src="(.*?)"/)[1]; 
-      return td.replace(/<[^>]*>?/gm,'');
-    }));
+  // Export XLSX
+  exportBtn.addEventListener("click",()=>{
+    const ws = XLSX.utils.json_to_sheet(table.rows().data().toArray());
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,"Penduduk");
+    XLSX.writeFile(wb,"penduduk.xlsx");
   });
-  const ws = XLSX.utils.aoa_to_sheet(ws_data);
-  XLSX.utils.book_append_sheet(wb, ws, "Penduduk");
-  XLSX.writeFile(wb, "Penduduk.xlsx");
-});
 
-loadData();
+  // Edit & Delete
+  $("#pendudukTable tbody").on("click",".editBtn", async function(){
+    const id = $(this).data("id");
+    const { data } = await supabase.from("penduduk").select("*").eq("id",id).single();
+    if(!data) return;
+    $("#edit_id").val(data.id);
+    $("#edit_nik").val(data.nik);
+    $("#edit_nama").val(data.nama);
+    $("#edit_no_hp").val(data.no_hp);
+    $("#edit_alamat").val(data.alamat);
+    $("#edit_keterangan").val(data.keterangan);
+    $("#edit_latitude").val(data.latitude);
+    $("#edit_longitude").val(data.longitude);
+    const mapDiv = document.getElementById("editMap");
+    mapDiv.innerHTML=""; // reset
+    const editMap = L.map("editMap").setView([data.latitude||-7.8014,data.longitude||110.3644],13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OSM'}).addTo(editMap);
+    let marker = L.marker([data.latitude||-7.8014,data.longitude||110.3644]).addTo(editMap);
+    editMap.on("click",e=>{
+      marker.setLatLng(e.latlng);
+      $("#edit_latitude").val(e.latlng.lat);
+      $("#edit_longitude").val(e.latlng.lng);
+    });
+    new bootstrap.Modal(document.getElementById("editModal")).show();
+  });
+
+  $("#pendudukTable tbody").on("click",".delBtn", async function(){
+    if(!confirm("Hapus data ini?")) return;
+    const id = $(this).data("id");
+    const { error } = await supabase.from("penduduk").delete().eq("id",id);
+    if(error){console.error(error); alert("Gagal hapus"); return;}
+    alert("Data dihapus");
+    loadData();
+  });
+
+  $("#editForm").on("submit", async function(e){
+    e.preventDefault();
+    const id = $("#edit_id").val();
+    const updateObj = {
+      nik:$("#edit_nik").val(),
+      nama:$("#edit_nama").val(),
+      no_hp:$("#edit_no_hp").val(),
+      alamat:$("#edit_alamat").val(),
+      keterangan:$("#edit_keterangan").val(),
+      latitude:$("#edit_latitude").val(),
+      longitude:$("#edit_longitude").val()
+    };
+    const { error } = await supabase.from("penduduk").update(updateObj).eq("id",id);
+    if(error){console.error(error); alert("Gagal update"); return;}
+    alert("Data diperbarui");
+    loadData();
+    bootstrap.Modal.getInstance(document.getElementById("editModal")).hide();
+  });
+});
 </script>
+
 </body>
 </html>
